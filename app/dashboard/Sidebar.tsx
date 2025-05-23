@@ -23,7 +23,7 @@ const Sidebar = () => {
     >
       {/* Navigation Links */}
       <div className="flex-1">
-        <ul className="space-y-0.5 font-semibold">
+        <ul className="space-y-0.5 font-medium">
           <li>
             <Link
               href="/dashboard"
@@ -36,7 +36,7 @@ const Sidebar = () => {
               <div className="text-xl">
                 <MdDashboard />
               </div>
-              {!collapse && <span>Dashboard</span>}
+              {!collapse && <span>Home</span>}
             </Link>
           </li>
           <li>
@@ -66,7 +66,7 @@ const Sidebar = () => {
               <div className="text-xl">
                 <CiStreamOn />
               </div>
-              {!collapse && <span>Tables</span>}
+              {!collapse && <span>Transfer</span>}
             </Link>
           </li>
           <li>
@@ -103,7 +103,6 @@ const Sidebar = () => {
       </div>
 
       {/* Logout Button */}
-      
     </div>
   );
 };

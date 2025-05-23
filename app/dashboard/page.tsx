@@ -65,6 +65,12 @@ export default function Dashboard() {
     }
   }, [userId]);
 
+  useEffect(() => {
+    if (selectedAccount) {
+      console.log("Fetching transactions for user:", userId);
+      fetchTransactions(userId);
+    }
+  }, [selectedAccount, userId]);
 
   const fetchAccounts = async () => {
     if (!userId) return;
@@ -95,15 +101,13 @@ export default function Dashboard() {
     }
   };
 
-  const fetchTransactions = async (userId: string) => {
+  const fetchTransactions = async (userId: number | undefined) => {
     try {
-      const token=localStorage.getItem("token");
-      if(!token) return;
       const response = await fetch(
         `http://localhost:8080/api/transactions/history/user/${userId}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
             "Content-Type": "application/json",
           },
           credentials: "include",
@@ -113,6 +117,7 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json();
         setTransactions(data);
+        console.log(data);
       } else {
         console.error("Failed to fetch transactions");
       }
@@ -284,7 +289,7 @@ export default function Dashboard() {
         // Fetch updated transactions
         const userId = localStorage.getItem("userId");
         if (userId) {
-          await fetchTransactions(userId);
+          await fetchTransactions(Number(userId));
         }
       } else {
         const errorData = await response
@@ -566,106 +571,101 @@ export default function Dashboard() {
         <Sidebar />
         <div className="flex-1 p-6 text-white">
           <h1 className="text-2xl py-6">Welcome back, {user?.username}</h1>
-          <p className="text-sm">
-            Your account number is {selectedAccount?.accountNumber}
-          </p>
+          <div className="bg-white/10 w-72 rounded-lg px-4 py-2 cursor-pointer my-16">
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger className="w-full">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
+                      <span className="text-sm">BK</span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-white">Current account</p>
+                      <p className="text-xs text-white/80">
+                        {selectedAccount?.accountNumber
+                          ?.replace(/(\d{4})/g, "$1 ")
+                          .trim() || "Select account"}
+                      </p>
+                    </div>
+                  </div>
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                {accounts.map((account) => (
+                  <DropdownMenu.Item
+                    key={account.id}
+                    onClick={() => setSelectedAccount(account)}
+                  >
+                    {account.accountNumber}
+                  </DropdownMenu.Item>
+                ))}
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </div>
           <div className="bg-white rounded-lg w-1/4 px-6 py-3">
-            <h1 className="text-gray-400 font-semibold text-sm ">
-              RECENT TRANSACTION
+            <h1 className="text-gray-400 font-semibold text-sm mb-4">
+              RECENT TRANSACTIONS
             </h1>
             {transactions && transactions.length > 0 ? (
-              <div className="flex text-black items-center justify-between gap-3">
-                <div className="flex gap-4 items-center">
-                  <span
-                    className={`p-4 rounded-full ${
-                      transactions[0].type === "DEPOSIT"
-                        ? "bg-green-100"
-                        : transactions[0].type === "WITHDRAWAL"
-                        ? "bg-red-100"
-                        : "bg-blue-100"
-                    }`}
+              <div className="space-y-4 ">
+                {transactions.slice(0, 5).map((transaction, index) => (
+                  <div
+                    key={transaction.id}
+                    className="flex text-black items-center justify-between gap-3 border-t border-gray-200 pt-4"
                   >
-                    <GrTransaction />
-                  </span>
+                    <div className="flex gap-4 items-center">
+                      <span
+                        className={`p-4 rounded-full ${
+                          transaction.type === "DEPOSIT"
+                            ? "bg-green-100"
+                            : transaction.type === "WITHDRAWAL"
+                            ? "bg-red-100"
+                            : "bg-blue-100"
+                        }`}
+                      >
+                        <GrTransaction />
+                      </span>
 
-                  <div>
-                    <h4>
-                      {transactions[0].description || transactions[0].type}
-                    </h4>
-                    <p className="text-xs text-gray-500 font-medium">
-                      {new Date(transactions[0].timestamp).toLocaleDateString()}
+                      <div>
+                        <h4 className="text-xs font-medium first-letter:uppercase">
+                          {transaction.description || transaction.type}
+                        </h4>
+                        <p className="text-xs text-gray-500 font-medium">
+                          {new Date(transaction.timestamp).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                    <p
+                      className={` text-sm font-medium ${
+                        transaction.type === "DEPOSIT"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transaction.type === "DEPOSIT" ? "+" : "-"}
+                      RWF {transaction.amount.toLocaleString()}
                     </p>
                   </div>
-                </div>
-                <p
-                  className={`${
-                    transactions[0].type === "DEPOSIT"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {transactions[0].type === "DEPOSIT" ? "+" : "-"}
-                  RWF {transactions[0].amount.toLocaleString()}
-                </p>
+                ))}
               </div>
             ) : (
               <p className="text-gray-500 text-sm py-2">
                 No recent transactions
               </p>
             )}
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow">
-          <h2 className="text-xl font-semibold p-6 border-b">
-            Transaction History
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Description
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          transaction.type === "DEPOSIT"
-                            ? "bg-green-100 text-green-800"
-                            : transaction.type === "WITHDRAWAL"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {transaction.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      ${transaction.amount.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {transaction.description}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {new Date(transaction.timestamp).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
