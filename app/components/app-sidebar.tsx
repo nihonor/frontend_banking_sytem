@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import Link from "next/link";
+import Link from "next/link"
 import {
   BarChart3,
   CreditCard,
@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   User,
   Wallet,
-} from "lucide-react";
+} from "lucide-react"
 
 import {
   Sidebar,
@@ -25,12 +25,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/sidebar"
 
 export function AppSidebar() {
   return (
     <Sidebar>
-      <SidebarHeader className="flex h-16 items-center border-b border-blue-800 px-4 bg-[#0a3977]">
+      <SidebarHeader className="flex h-16 items-center border-b border-blue-800 px-4">
         <Link href="/" className="flex items-center gap-2 font-bold text-white">
           <Landmark className="h-6 w-6" />
           <span className="text-lg">BANK OF KIGALI</span>
@@ -50,7 +50,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/accounts">
+                  <Link href="/accounts">
                     <Wallet className="h-5 w-5" />
                     <span>Accounts</span>
                   </Link>
@@ -58,7 +58,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/transfer">
+                  <Link href="/transfer">
                     <Send className="h-5 w-5" />
                     <span>Transfer</span>
                   </Link>
@@ -66,7 +66,15 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/cards">
+                  <Link href="/pay">
+                    <CreditCard className="h-5 w-5" />
+                    <span>Pay</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/cards">
                     <CreditCard className="h-5 w-5" />
                     <span>Cards</span>
                   </Link>
@@ -74,7 +82,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/savings">
+                  <Link href="/savings">
                     <PiggyBank className="h-5 w-5" />
                     <span>Savings</span>
                   </Link>
@@ -82,7 +90,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/investments">
+                  <Link href="/investments">
                     <BarChart3 className="h-5 w-5" />
                     <span>Investments</span>
                   </Link>
@@ -90,7 +98,15 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/statements">
+                  <Link href="/loans">
+                    <Landmark className="h-5 w-5" />
+                    <span>Loans</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/statements">
                     <Newspaper className="h-5 w-5" />
                     <span>Statements</span>
                   </Link>
@@ -98,7 +114,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/profile">
+                  <Link href="/profile">
                     <User className="h-5 w-5" />
                     <span>Profile</span>
                   </Link>
@@ -106,7 +122,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/security">
+                  <Link href="/security">
                     <ShieldCheck className="h-5 w-5" />
                     <span>Security</span>
                   </Link>
@@ -114,7 +130,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/dashboard/settings">
+                  <Link href="/settings">
                     <Settings className="h-5 w-5" />
                     <span>Settings</span>
                   </Link>
@@ -126,5 +142,5 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  );
+  )
 }

@@ -1,12 +1,27 @@
 "use client";
 
+import type React from "react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { CiLock } from "react-icons/ci";
+import { Eye, EyeOff, Landmark, Lock, Mail } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -15,6 +30,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -26,14 +42,6 @@ export default function LoginPage() {
       );
     }
   }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,96 +97,143 @@ export default function LoginPage() {
   }
 
   return (
-    <div className=" bg-[url('/bk_house.jpg')] bg-no-repeat  bg-cover">
-      <div className="min-h-screen flex items-center justify-center">
-        {/*    */}
+    <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a3977] p-4">
+      <div className="mb-8 flex items-center gap-2">
+        <Landmark className="h-10 w-10 text-white" />
+        <h1 className="text-3xl font-bold text-white">BANK OF KIGALI</h1>
+      </div>
 
-        <nav className="fixed top-0 left-0 right-0 bg-gray-200  p-6 shadow-md flex justify-between px-7">
-          <Image src="/bk.png" alt="logo" width={250} height={300} />
-        </nav>
-
-        <div className="bg-blue-500 p-8 w-1/4 h-full ">
-          <h1 className="text-white text-3xl">Sign in to Internet Banking</h1>
-          <div className="text-white pr-10 text-2xl">
-            <p>State of the Art</p>
-            <p> Banking Experience </p>
-            <p>At Your Fingertips</p>
-          </div>
-          <div className="text-gray-300 flex items-center gap-2 py-6">
-            <CiLock /> You are logging in to a safe and secure platform
-          </div>
-        </div>
-
-        <div className="bg-white p-8 w-1/4">
+      <Card className="w-full max-w-md bg-blue-800/50 text-white">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
+            Welcome Back
+          </CardTitle>
+          <CardDescription className="text-center text-blue-200">
+            Enter your credentials to access your account
+          </CardDescription>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {error}
             </div>
           )}
-
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
               {success}
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-400"
-              >
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="mt-1 block w-full  border-b border-gray-300 focus:border-blue-500 focus:ring-blue-500 px-2"
-                required
-              />
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username or Customer ID</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-300" />
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  className="border-blue-700 bg-blue-900/50 pl-10 text-white placeholder:text-blue-300"
+                  value={formData.username}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
             </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-400"
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full border-b border-gray-300  focus:border-blue-500 focus:ring-blue-500  px-2"
-                required
-              />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-blue-200 underline-offset-4 hover:text-white hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-300" />
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="border-blue-700 bg-blue-900/50 pl-10 pr-10 text-white placeholder:text-blue-300"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }))
+                  }
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-blue-300 hover:text-white"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
             </div>
-
-            <button
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
+              <Label htmlFor="remember" className="text-sm font-normal">
+                Remember me for 30 days
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button
               type="submit"
+              className="w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400"
               disabled={loading || !mounted}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 font-light"
             >
-              {loading ? "Logging in..." : "SIGN IN"}
-            </button>
-          </form>
-
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <a
+              {loading ? "Signing in..." : "Sign In"}
+            </Button>
+            <div className="text-center text-sm text-blue-200">
+              Don&apos;t have an account?{" "}
+              <Link
                 href="/register"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-white underline-offset-4 hover:underline"
               >
-                Register here
-              </a>
-            </p>
-          </div>
+                Sign up
+              </Link>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <div className="mt-8 text-center text-sm text-blue-200">
+        <p>© 2025 Bank of Kigali. All rights reserved.</p>
+        <div className="mt-2 flex justify-center gap-4">
+          <Link href="#" className="hover:text-white">
+            Terms
+          </Link>
+          <Link href="#" className="hover:text-white">
+            Privacy
+          </Link>
+          <Link href="#" className="hover:text-white">
+            Security
+          </Link>
         </div>
       </div>
     </div>

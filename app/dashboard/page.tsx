@@ -2,10 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "./Sidebar";
-import Image from "next/image";
-import { Avatar, DropdownMenu, Link } from "@radix-ui/themes";
-import { GrTransaction } from "react-icons/gr";
+import {
+  ArrowRight,
+  Bell,
+  ChevronDown,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Plus,
+  Send,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Account {
   id: number;
@@ -28,7 +47,17 @@ interface User {
   email: string;
 }
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
+  const [currentAccount, setCurrentAccount] = useState({
+    name: "Current account",
+    number: "0842 0842 **** 0842",
+  });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [userId, setUserId] = useState<number>();
@@ -46,6 +75,8 @@ export default function Dashboard() {
   >("withdraw");
 
   useEffect(() => {
+    if (!mounted) return;
+
     const storedUserId = localStorage.getItem("userId");
 
     if (!storedUserId) {
@@ -54,9 +85,8 @@ export default function Dashboard() {
     }
 
     const parsedUserId = Number(storedUserId);
-
     setUserId(parsedUserId);
-  }, [router]);
+  }, [mounted, router]);
 
   useEffect(() => {
     if (userId) {
@@ -101,30 +131,6 @@ export default function Dashboard() {
     }
   };
 
-  const fetchTransactions = async (userId: number | undefined) => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/transactions/history/user/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setTransactions(data);
-        console.log(data);
-      } else {
-        console.error("Failed to fetch transactions");
-      }
-    } catch (err) {
-      console.error("Error fetching transactions:", err);
-    }
-  };
   const currentUser = async () => {
     try {
       const response = await fetch(
@@ -311,364 +317,250 @@ export default function Dashboard() {
     router.push("/");
   };
 
+  const quickLinks = [
+    { id: "rwf", name: "RWF **********", icon: FileText, action: "View" },
+    { id: "statement", name: "Get statement", icon: FileText, action: "View" },
+    { id: "bk-to-momo", name: "BK to Momo", icon: Send, action: "Send" },
+    { id: "bk-to-bk", name: "BK to BK", icon: Send, action: "Send" },
+    {
+      id: "bk-to-mobile",
+      name: "BK to Mobile money",
+      icon: Send,
+      action: "Send",
+    },
+  ];
+
+  const beneficiaries = [
+    { id: "1", name: "Teta Vanessa", paymentRefs: 5, avatar: "TV" },
+    { id: "2", name: "Yvonne", paymentRefs: 3, avatar: "YV" },
+    { id: "3", name: "Berg", paymentRefs: 2, avatar: "BG" },
+    { id: "4", name: "Simon", paymentRefs: 3, avatar: "SM" },
+  ];
+
+  const fetchTransactions = async (userId: number | undefined) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/transactions/history/user/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data);
+        console.log(data);
+      } else {
+        console.error("Failed to fetch transactions");
+      }
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+    }
+  };
+
   return (
-    // <div className="min-h-screen bg-gray-100 p-6">
-    //   <div className="max-w-6xl mx-auto">
-    //     <div className="flex justify-between items-center mb-6">
-    //       <h1 className="text-3xl font-bold">ATM Dashboard</h1>
-    //       <div className="flex gap-4">
-    //         <button
-    //           onClick={() => setShowCreateAccount(true)}
-    //           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-    //         >
-    //           Create Account
-    //         </button>
-    //         <button
-    //           onClick={handleLogout}
-    //           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-    //         >
-    //           Logout
-    //         </button>
-    //       </div>
-    //     </div>
-
-    //     {/* Create Account Modal */}
-    //     {showCreateAccount && (
-    //       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-    //         <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-    //           <h2 className="text-xl font-bold mb-4">Create New Account</h2>
-    //           <div className="mb-4">
-    //             <label className="block text-sm font-medium text-gray-700 mb-2">
-    //               Account Type
-    //             </label>
-    //             <select
-    //               value={newAccountType}
-    //               onChange={(e) => setNewAccountType(e.target.value)}
-    //               className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-    //             >
-    //               <option value="SAVINGS">Savings</option>
-    //               <option value="CHECKING">Checking</option>
-    //             </select>
-    //           </div>
-    //           <div className="flex justify-end gap-4">
-    //             <button
-    //               onClick={() => setShowCreateAccount(false)}
-    //               className="px-4 py-2 text-gray-600 hover:text-gray-800"
-    //               disabled={loading}
-    //             >
-    //               Cancel
-    //             </button>
-    //             <button
-    //               onClick={createNewAccount}
-    //               disabled={loading}
-    //               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-    //             >
-    //               {loading ? "Creating..." : "Create"}
-    //             </button>
-    //           </div>
-    //         </div>
-    //       </div>
-    //     )}
-
-    //     {/* Account Selection */}
-    //     <div className="bg-white rounded-lg shadow p-6 mb-6">
-    //       <h2 className="text-xl font-semibold mb-4">Your Accounts</h2>
-    //       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    //         {accounts.map((account) => (
-    //           <div
-    //             key={account.id}
-    //             onClick={() => setSelectedAccount(account)}
-    //             className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-    //               selectedAccount?.id === account.id
-    //                 ? "border-blue-500 bg-blue-50"
-    //                 : "border-gray-200 hover:border-blue-300"
-    //             }`}
-    //           >
-    //             <p className="text-sm text-gray-600">{account.accountType}</p>
-    //             <p className="text-lg font-semibold">{account.accountNumber}</p>
-    //             <p className="text-2xl font-bold text-green-600">
-    //               ${account.balance.toFixed(2)}
-    //             </p>
-    //           </div>
-    //         ))}
-    //       </div>
-    //     </div>
-
-    //     {selectedAccount && (
-    //       <>
-    //         {/* Operations Card */}
-    //         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-    //           <div className="bg-white rounded-lg shadow p-6">
-    //             <div className="flex space-x-4 mb-4">
-    //               <button
-    //                 onClick={() => setActiveTab("withdraw")}
-    //                 className={`px-4 py-2 rounded ${
-    //                   activeTab === "withdraw"
-    //                     ? "bg-blue-600 text-white"
-    //                     : "bg-gray-200"
-    //                 }`}
-    //               >
-    //                 Withdraw
-    //               </button>
-    //               <button
-    //                 onClick={() => setActiveTab("deposit")}
-    //                 className={`px-4 py-2 rounded ${
-    //                   activeTab === "deposit"
-    //                     ? "bg-blue-600 text-white"
-    //                     : "bg-gray-200"
-    //                 }`}
-    //               >
-    //                 Deposit
-    //               </button>
-    //               <button
-    //                 onClick={() => setActiveTab("transfer")}
-    //                 className={`px-4 py-2 rounded ${
-    //                   activeTab === "transfer"
-    //                     ? "bg-blue-600 text-white"
-    //                     : "bg-gray-200"
-    //                 }`}
-    //               >
-    //                 Transfer
-    //               </button>
-    //             </div>
-
-    //             {error && (
-    //               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-    //                 {error}
-    //               </div>
-    //             )}
-
-    //             <div className="space-y-4">
-    //               <div>
-    //                 <label className="block text-sm font-medium text-gray-700">
-    //                   Amount
-    //                 </label>
-    //                 <input
-    //                   type="number"
-    //                   value={amount}
-    //                   onChange={(e) => setAmount(e.target.value)}
-    //                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-    //                   placeholder="Enter amount"
-    //                   min="0"
-    //                   step="0.01"
-    //                 />
-    //               </div>
-
-    //               {activeTab === "transfer" && (
-    //                 <div>
-    //                   <label className="block text-sm font-medium text-gray-700">
-    //                     Recipient Account Number
-    //                   </label>
-    //                   <input
-    //                     type="text"
-    //                     value={recipientId}
-    //                     onChange={(e) => setRecipientId(e.target.value)}
-    //                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-    //                     placeholder="Enter recipient account number"
-    //                   />
-    //                 </div>
-    //               )}
-
-    //               <button
-    //                 onClick={() => handleOperation(activeTab)}
-    //                 disabled={loading}
-    //                 className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-    //               >
-    //                 {loading ? "Processing..." : `Confirm ${activeTab}`}
-    //               </button>
-    //             </div>
-    //           </div>
-
-    //           {/* Transactions */}
-    // <div className="bg-white rounded-lg shadow">
-    //   <h2 className="text-xl font-semibold p-6 border-b">
-    //     Transaction History
-    //   </h2>
-    //   <div className="overflow-x-auto">
-    //     <table className="min-w-full divide-y divide-gray-200">
-    //       <thead className="bg-gray-50">
-    //         <tr>
-    //           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-    //             Type
-    //           </th>
-    //           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-    //             Amount
-    //           </th>
-    //           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-    //             Description
-    //           </th>
-    //           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-    //             Date
-    //           </th>
-    //         </tr>
-    //       </thead>
-    //       <tbody className="bg-white divide-y divide-gray-200">
-    //         {transactions.map((transaction) => (
-    //           <tr key={transaction.id}>
-    //             <td className="px-6 py-4 whitespace-nowrap">
-    //               <span
-    //                 className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-    //                   transaction.type === "DEPOSIT"
-    //                     ? "bg-green-100 text-green-800"
-    //                     : transaction.type === "WITHDRAWAL"
-    //                     ? "bg-red-100 text-red-800"
-    //                     : "bg-blue-100 text-blue-800"
-    //                 }`}
-    //               >
-    //                 {transaction.type}
-    //               </span>
-    //             </td>
-    //             <td className="px-6 py-4 whitespace-nowrap">
-    //               ${transaction.amount.toFixed(2)}
-    //             </td>
-    //             <td className="px-6 py-4 whitespace-nowrap">
-    //               {transaction.description}
-    //             </td>
-    //             <td className="px-6 py-4 whitespace-nowrap">
-    //               {new Date(transaction.timestamp).toLocaleString()}
-    //             </td>
-    //           </tr>
-    //         ))}
-    //       </tbody>
-    //     </table>
-    //   </div>
-    // </div>
-    //         </div>
-    //       </>
-    //     )}
-    //   </div>
-    // </div>
-    <div className="bg-[#1F65B3]">
-      <nav className=" top-0 left-0 right-0  p-6 flex items-center px-7 text-white text-2xl font-bold justify-between">
-        <div className="flex items-center">
-          <Image src="/bk_logo.png" alt="logo" width={50} height={300} />
-          BANK OF KIGALI
-        </div>
-        <div>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-white hover:bg-white/20  text-sm text-[#1F65B3]">
-                <Avatar
-                  src=""
-                  fallback={user?.username?.charAt(0).toUpperCase() || "?"}
-                  size="3"
-                  radius="full"
-                  className="cursor-pointer"
-                  variant="soft"
-                />
-                <span>{user?.username}</span>
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Item>
-                <Link href="/logout">Logout</Link>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
-        </div>
-      </nav>
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 p-6 text-white">
-          <h1 className="text-2xl py-6">Welcome back, {user?.username}</h1>
-          <div className="bg-white/10 w-72 rounded-lg px-4 py-2 cursor-pointer my-16">
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="w-full">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                      <span className="text-sm">BK</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-white">Current account</p>
-                      <p className="text-xs text-white/80">
-                        {selectedAccount?.accountNumber
-                          ?.replace(/(\d{4})/g, "$1 ")
-                          .trim() || "Select account"}
-                      </p>
-                    </div>
-                  </div>
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
+          <header className="flex h-16 items-center justify-between border-b border-blue-800 px-6">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">BANK OF KIGALI</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Button variant="ghost" size="icon" className="text-white">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-400 text-xs text-black">
+                    3
+                  </span>
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-blue-900">
+                  {user?.username.charAt(0)}
                 </div>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                {accounts.map((account) => (
-                  <DropdownMenu.Item
-                    key={account.id}
-                    onClick={() => setSelectedAccount(account)}
-                  >
-                    {account.accountNumber}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </div>
-          <div className="bg-white rounded-lg w-1/4 px-6 py-3">
-            <h1 className="text-gray-400 font-semibold text-sm mb-4">
-              RECENT TRANSACTIONS
-            </h1>
-            {transactions && transactions.length > 0 ? (
-              <div className="space-y-4 ">
-                {transactions.slice(0, 5).map((transaction, index) => (
-                  <div
-                    key={transaction.id}
-                    className="flex text-black items-center justify-between gap-3 border-t border-gray-200 pt-4"
-                  >
-                    <div className="flex gap-4 items-center">
-                      <span
-                        className={`p-4 rounded-full ${
-                          transaction.type === "DEPOSIT"
-                            ? "bg-green-100"
-                            : transaction.type === "WITHDRAWAL"
-                            ? "bg-red-100"
-                            : "bg-blue-100"
-                        }`}
-                      >
-                        <GrTransaction />
-                      </span>
+                <span className="text-sm font-medium">
+                  {user?.username}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-1 h-5 w-5 text-white"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </header>
 
-                      <div>
-                        <h4 className="text-xs font-medium first-letter:uppercase">
-                          {transaction.description || transaction.type}
-                        </h4>
-                        <p className="text-xs text-gray-500 font-medium">
-                          {new Date(transaction.timestamp).toLocaleTimeString()}
-                        </p>
+          <main className="flex-1 p-6">
+            <div className="mb-8">
+              <h2 className="text-3xl font-semibold">Welcome back, {user?.username}</h2>
+            </div>
+
+            <div className="mb-8">
+              <Card className="bg-blue-800/50 text-white">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">
+                      {currentAccount.name}
+                    </CardTitle>
+                    <ChevronDown className="h-5 w-5" />
+                  </div>
+                  <CardDescription className="text-blue-200">
+                    {selectedAccount?.accountNumber}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Quick Links */}
+              <Card className="bg-blue-800/50 text-white">
+                <CardHeader>
+                  <CardTitle className="text-lg">QUICK LINKS</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {quickLinks.map((link) => (
+                    <div
+                      key={link.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <link.icon className="h-5 w-5 text-blue-300" />
+                        <span>{link.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1 text-blue-300 hover:text-white"
+                      >
+                        {link.action}
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Favorite Beneficiaries */}
+              <Card className="bg-blue-800/50 text-white">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg">
+                    FAVORITE BENEFICIARIES
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-300"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {beneficiaries.map((beneficiary) => (
+                    <div
+                      key={beneficiary.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8 bg-green-500/20 text-green-400">
+                          <AvatarFallback>{beneficiary.avatar}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div>{beneficiary.name}</div>
+                          <div className="text-xs text-blue-300">
+                            {beneficiary.paymentRefs} payment references
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1 text-blue-300 hover:text-white"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Recent Transactions */}
+              <Card className="bg-blue-800/50 text-white">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-lg">RECENT TRANSACTION</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-300"
+                  >
+                    <ExternalLink className="h-5 w-5" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {transactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+                          <CreditCard className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div>{transaction.type}</div>
+                          <div className="text-xs text-blue-300">
+                            {new Date(
+                              transaction.timestamp
+                            ).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">
+                          RWF {transaction.amount.toLocaleString()}
+                        </div>
                       </div>
                     </div>
-                    <p
-                      className={` text-sm font-medium ${
-                        transaction.type === "DEPOSIT"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {transaction.type === "DEPOSIT" ? "+" : "-"}
-                      RWF {transaction.amount.toLocaleString()}
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Mortgage Banner */}
+            <div className="mt-8">
+              <Card className="bg-gradient-to-r from-blue-800/80 to-blue-700/50 text-white">
+                <CardContent className="flex items-center justify-between p-6">
+                  <div>
+                    <h3 className="mb-2 text-xl font-semibold">
+                      MORTGAGE READY
+                    </h3>
+                    <p className="mb-4 text-blue-200">
+                      Blossom into homeownership
                     </p>
+                    <Button className="bg-yellow-500 text-blue-900 hover:bg-yellow-400">
+                      Learn More
+                    </Button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm py-2">
-                No recent transactions
-              </p>
-            )}
-          </div>
+                  <div className="hidden md:block">
+                    <img
+                      src="/placeholder.svg?height=120&width=120"
+                      alt="Mortgage illustration"
+                      className="h-30 w-30 rounded-full"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
