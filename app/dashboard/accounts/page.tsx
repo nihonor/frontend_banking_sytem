@@ -53,6 +53,7 @@ export default function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -165,6 +166,21 @@ export default function AccountsPage() {
     },
   ];
 
+  const filteredAccounts = accounts.filter(
+    (account) =>
+      account.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      account.accountType.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredTransactions = recentTransactions.filter(
+    (transaction) =>
+      transaction.description
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      transaction.account.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transaction.amount.toString().includes(searchQuery)
+  );
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -212,6 +228,8 @@ export default function AccountsPage() {
                 <Input
                   placeholder="Search accounts or transactions"
                   className="w-[300px] rounded-lg border-blue-800 bg-blue-900/50 pl-10 text-white placeholder:text-blue-300"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <div className="flex gap-3">
@@ -258,7 +276,7 @@ export default function AccountsPage() {
               </TabsList>
               <TabsContent value="all" className="mt-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {accounts.map((account) => (
+                  {filteredAccounts.map((account) => (
                     <Card
                       key={account.id}
                       className="bg-blue-800/50 text-white"
@@ -551,7 +569,7 @@ export default function AccountsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentTransactions.map((transaction) => (
+                  {filteredTransactions.map((transaction) => (
                     <div
                       key={transaction.id}
                       className="flex items-center justify-between rounded-lg bg-blue-900/50 p-3"
