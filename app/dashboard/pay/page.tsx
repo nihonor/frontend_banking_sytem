@@ -26,34 +26,7 @@ export default function PayPage() {
   ]
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
-          <header className="flex h-16 items-center justify-between border-b border-blue-800 px-6">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">BANK OF KIGALI</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="text-white">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-400 text-xs text-black">
-                    3
-                  </span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-blue-900">
-                  MA
-                </div>
-                <span className="text-sm font-medium">Mutoni Alice</span>
-                <Button variant="ghost" size="icon" className="ml-1 h-5 w-5 text-white">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </header>
+   
 
           <main className="flex-1 p-6">
             <div className="mb-6">
@@ -188,8 +161,7 @@ export default function PayPage() {
               </TabsContent>
             </Tabs>
           </main>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+       
+
   )
 }

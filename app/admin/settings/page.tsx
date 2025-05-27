@@ -14,6 +14,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 export default function SettingsPage() {
   return (
     
+        <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
+          
 
           <main className="flex-1 p-6">
             <div className="mb-6">
@@ -283,7 +285,7 @@ export default function SettingsPage() {
               </Card>
             </div>
           </main>
-       
+        </div>
 
   )
 }

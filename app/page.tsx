@@ -75,9 +75,9 @@ export default function LoginPage() {
         localStorage.setItem("userId", data.id);
 
         if (data.role === "ADMIN") {
-          router.push("/admin");
+          router.push("/admin/home");
         } else {
-          router.push("/dashboard");
+          router.push("/dashboard/home");
         }
       } else {
         setError(

@@ -1,6 +1,7 @@
 import { Theme } from "@radix-ui/themes";
 import "./globals.css";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "ATM System",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body>
         <Theme>
           {children}
+          <Toaster />
         </Theme>
       </body>
     </html>
