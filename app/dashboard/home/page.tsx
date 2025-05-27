@@ -310,23 +310,27 @@ const page = () => {
   };
 
   const quickLinks = [
-    { id: "rwf", name: "RWF **********", icon: FileText, action: "View" },
-    { id: "statement", name: "Get statement", icon: FileText, action: "View" },
-    { id: "bk-to-momo", name: "BK to Momo", icon: Send, action: "Send" },
-    { id: "bk-to-bk", name: "BK to BK", icon: Send, action: "Send" },
     {
-      id: "bk-to-mobile",
-      name: "BK to Mobile money",
+      id: "transfer",
+      name: "Make Transfer",
       icon: Send,
-      action: "Send",
+      action: "Transfer",
+      href: "/dashboard/transfer",
     },
-  ];
-
-  const beneficiaries = [
-    { id: "1", name: "Teta Vanessa", paymentRefs: 5, avatar: "TV" },
-    { id: "2", name: "Yvonne", paymentRefs: 3, avatar: "YV" },
-    { id: "3", name: "Berg", paymentRefs: 2, avatar: "BG" },
-    { id: "4", name: "Simon", paymentRefs: 3, avatar: "SM" },
+    // {
+    //   id: "statement",
+    //   name: "Download Statement",
+    //   icon: FileText,
+    //   action: "Download",
+    //   href: "#",
+    // }
+    // {
+    //   id: "new-account",
+    //   name: "Open New Account",
+    //   icon: Plus,
+    //   action: "Create",
+    //   onClick: () => setShowCreateAccount(true),
+    // },
   ];
 
   const fetchTransactions = async (userId: number | undefined) => {
@@ -366,13 +370,18 @@ const page = () => {
         <Card className="bg-blue-800/50 text-white">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{currentAccount.name}</CardTitle>
+              <CardTitle className="text-lg">Current Balance</CardTitle>
               <ChevronDown className="h-5 w-5" />
             </div>
             <CardDescription className="text-blue-200">
               {selectedAccount?.accountNumber}
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">
+              RWF {selectedAccount?.balance.toLocaleString()}
+            </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -384,7 +393,11 @@ const page = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {quickLinks.map((link) => (
-              <div key={link.id} className="flex items-center justify-between">
+              <div
+                key={link.id}
+                className="flex items-center justify-between cursor-pointer hover:bg-blue-700/50 rounded-lg p-2 transition-colors"
+                onClick={link.onClick || (() => router.push(link.href))}
+              >
                 <div className="flex items-center gap-3">
                   <link.icon className="h-5 w-5 text-blue-300" />
                   <span>{link.name}</span>
@@ -402,84 +415,111 @@ const page = () => {
           </CardContent>
         </Card>
 
-        {/* Favorite Beneficiaries */}
+        {/* Account Summary */}
         <Card className="bg-blue-800/50 text-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">FAVORITE BENEFICIARIES</CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-blue-300"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <CardTitle className="text-lg">ACCOUNT SUMMARY</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {beneficiaries.map((beneficiary) => (
+            {accounts.map((account) => (
               <div
-                key={beneficiary.id}
-                className="flex items-center justify-between"
+                key={account.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-blue-900/30 hover:bg-blue-700/50 cursor-pointer"
+                onClick={() => setSelectedAccount(account)}
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8 bg-green-500/20 text-green-400">
-                    <AvatarFallback>{beneficiary.avatar}</AvatarFallback>
+                    <AvatarFallback>
+                      {account.accountType.substring(0, 2)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <div>{beneficiary.name}</div>
+                    <div className="font-medium">{account.accountType}</div>
                     <div className="text-xs text-blue-300">
-                      {beneficiary.paymentRefs} payment references
+                      {account.accountNumber}
                     </div>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1 text-blue-300 hover:text-white"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                <div className="text-right">
+                  <div className="font-medium">
+                    RWF {account.balance.toLocaleString()}
+                  </div>
+                </div>
               </div>
             ))}
+            {/* <Button
+              variant="outline"
+              className="w-full border-blue-400 text-blue-300 hover:bg-blue-700/50 hover:text-white"
+              onClick={() => setShowCreateAccount(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Open New Account
+            </Button> */}
           </CardContent>
         </Card>
 
         {/* Recent Transactions */}
         <Card className="bg-blue-800/50 text-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg">RECENT TRANSACTION</CardTitle>
+            <CardTitle className="text-lg">RECENT TRANSACTIONS</CardTitle>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-blue-300"
+              onClick={() => router.push("/dashboard/transactions")}
             >
               <ExternalLink className="h-5 w-5" />
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {transactions.map((transaction) => (
+            {transactions.slice(0, 5).map((transaction) => (
               <div
                 key={transaction.id}
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                      transaction.type === "DEPOSIT"
+                        ? "bg-green-500/20 text-green-400"
+                        : transaction.type === "WITHDRAW"
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-blue-500/20 text-blue-400"
+                    }`}
+                  >
                     <CreditCard className="h-4 w-4" />
                   </div>
                   <div>
                     <div>{transaction.type}</div>
                     <div className="text-xs text-blue-300">
-                      {new Date(transaction.timestamp).toLocaleTimeString()}
+                      {new Date(transaction.timestamp).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium">
-                    RWF {transaction.amount.toLocaleString()}
+                  <div
+                    className={`font-medium ${
+                      transaction.type === "DEPOSIT"
+                        ? "text-green-400"
+                        : "text-red-400"
+                    }`}
+                  >
+                    {transaction.type === "DEPOSIT" ? "+" : "-"} RWF{" "}
+                    {transaction.amount.toLocaleString()}
                   </div>
                 </div>
               </div>
             ))}
           </CardContent>
+          <CardFooter>
+            {/* <Button
+              variant="ghost"
+              className="w-full text-blue-300 hover:text-white"
+              onClick={() => router.push("/dashboard/transactions")}
+            >
+              View All Transactions
+            </Button> */}
+          </CardFooter>
         </Card>
       </div>
 

@@ -8,6 +8,7 @@ export interface User {
   firstName?: string
   lastName?: string
   role: string
+  status: string
   createdAt?: string
 }
 
@@ -54,6 +55,12 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export interface CreateAccountRequest {
+  userId: number;
+  accountType: string;
+  initialBalance?: number;
+}
+
 // API Client class
 export class ApiClient {
   private baseURL: string
@@ -77,7 +84,7 @@ export class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`
+    const url = `${this.baseURL}${endpoint}`;
     const config: RequestInit = {
       ...options,
       headers: {
@@ -85,19 +92,57 @@ export class ApiClient {
         ...options.headers,
       },
       credentials: "include",
-    }
+    };
+
+    // Log request details (but not sensitive data)
+    console.log("API Request:", {
+      url,
+      method: options.method || 'GET',
+      hasAuthHeader: !!(config.headers as any)?.Authorization,
+      authHeaderPrefix: (config.headers as any)?.Authorization?.substring(0, 7) || 'none'
+    });
 
     try {
-      const response = await fetch(url, config)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+      const response = await fetch(url, config);
+      
+      // For DELETE operations, return null for 204 responses
+      if (response.status === 204) {
+        return null as T;
       }
 
-      return await response.json()
-    } catch (error) {
-      console.error("API request failed:", error)
-      throw error
+      // Try to parse the response as JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // If parsing fails and the response wasn't ok, throw an error
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error("You don't have permission to perform this action. Please check your authentication and account status.");
+          }
+          throw new Error(`Request failed with status: ${response.status}`);
+        }
+        // If parsing fails but response was ok (like for 204), return null
+        return null as T;
+      }
+
+      // If we got JSON but the response wasn't ok, throw with the error message
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error(data.message || "You don't have permission to perform this action. Please check your authentication and account status.");
+        }
+        throw new Error(data.message || `Request failed with status: ${response.status}`);
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error("API request failed:", {
+        url,
+        method: options.method || 'GET',
+        error: error.message || 'Unknown error',
+        status: error.status
+      });
+      throw error;
     }
   }
 
@@ -175,12 +220,53 @@ export class ApiClient {
       `/transactions/transfer?fromAccountNumber=${fromAccountNumber}&toAccountNumber=${toAccountNumber}&amount=${amount}`,
       {
         method: "PUT",
-      },
-    )
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      }
+    );
   }
 
   async getUserTransactionHistory(userId: number): Promise<Transaction[]> {
     return this.request<Transaction[]>(`/transactions/history/user/${userId}`)
+  }
+
+  async getRecentRecipients(userId: number): Promise<{ accountNumber: string; name: string; recentAmount: number }[]> {
+    const transactions = await this.getUserTransactionHistory(userId);
+    const currentUserAccounts = await this.getUserAccounts(userId);
+    const userAccountNumbers = new Set(currentUserAccounts.map(acc => acc.accountNumber));
+    
+    // Get unique recipients from recent transactions
+    const recipientsMap = new Map();
+    
+    transactions
+      .filter(trans => trans.transactionType === 'TRANSFER')
+      .forEach(trans => {
+        // If this user is the sender, add recipient
+        if (userAccountNumbers.has(trans.fromAccountNumber!)) {
+          const recipientAccNum = trans.toAccountNumber!;
+          if (!recipientsMap.has(recipientAccNum)) {
+            recipientsMap.set(recipientAccNum, {
+              accountNumber: recipientAccNum,
+              name: `Account ${recipientAccNum.substring(recipientAccNum.length - 4)}`,
+              recentAmount: trans.amount,
+              lastTransactionTime: new Date(trans.timestamp)
+            });
+          }
+        }
+      });
+
+    // Convert to array and sort by most recent
+    return Array.from(recipientsMap.values())
+      .sort((a, b) => b.lastTransactionTime.getTime() - a.lastTransactionTime.getTime())
+      .slice(0, 5)
+      .map(({ accountNumber, name, recentAmount }) => ({
+        accountNumber,
+        name,
+        recentAmount
+      }));
   }
 
   // Admin endpoints
@@ -203,9 +289,9 @@ export class ApiClient {
   }
 
   async deleteAccount(id: number): Promise<void> {
-    return this.request<void>(`/admin/accounts/${id}`, {
-      method: "DELETE",
-    })
+    await this.request<void>(`/admin/accounts/${id}`, {
+      method: "DELETE"
+    });
   }
 
   // Audit Log endpoints
@@ -247,10 +333,12 @@ export class ApiClient {
   }
 
   async updateUser(userId: number, userData: Partial<User>): Promise<User> {
+    console.log('Updating user with ID:', userId, 'Data:', userData);
     const response = await this.request<User>(`/users/${userId}`, {
       method: 'PUT',
       body: JSON.stringify(userData)
     });
+    console.log('Update response:', response);
     return response;
   }
 
@@ -259,6 +347,40 @@ export class ApiClient {
       method: "POST",
       body: JSON.stringify(userData),
     });
+  }
+
+  // Add these methods to the ApiClient class
+  async updateAccount(id: number, accountData: Partial<Account>): Promise<Account> {
+    return this.request<Account>(`/admin/accounts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(accountData)
+    });
+  }
+
+  async suspendAccount(id: number): Promise<Account> {
+    return this.updateAccount(id, { status: "SUSPENDED" });
+  }
+
+  async activateAccount(id: number): Promise<Account> {
+    return this.updateAccount(id, { status: "ACTIVE" });
+  }
+
+  async createAccountForUser(userId: number, accountType: string, initialBalance: number = 0): Promise<Account> {
+    return this.request<Account>(
+      `/users/${userId}/accounts?accountType=${accountType}`,
+      {
+        method: "POST"
+      }
+    );
+  }
+
+  // Add this new method
+  async getCurrentUser(): Promise<User> {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      throw new Error("No user ID found");
+    }
+    return this.request<User>(`/users/${userId}`);
   }
 }
 

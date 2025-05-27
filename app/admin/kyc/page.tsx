@@ -177,7 +177,7 @@ export default function KYCPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="border-blue-400 text-white hover:bg-blue-800"
+                  className="border-blue-400 text-black hover:bg-blue-800"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Export

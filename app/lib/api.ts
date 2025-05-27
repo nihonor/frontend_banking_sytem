@@ -4,6 +4,7 @@ export interface User {
   email: string;
   role: string;
   password?: string; // We won't use this on frontend but it comes from API
+
 }
 
 export interface Account {
@@ -14,6 +15,7 @@ export interface Account {
   userId: number;
   user?: User; // For joined data
   createdAt?: string;
+ 
 }
 
 const BASE_URL = 'http://localhost:5000/api';

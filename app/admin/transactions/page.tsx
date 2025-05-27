@@ -38,6 +38,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { apiClient, type Transaction, type User } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminTransactionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +53,9 @@ export default function AdminTransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   useEffect(() => {
     fetchTransactionData();
@@ -54,29 +64,20 @@ export default function AdminTransactionsPage() {
   const fetchTransactionData = async () => {
     try {
       setIsLoading(true);
-      const allUsers = await apiClient.getAllUsers();
-      setUsers(allUsers);
+      // Get all transactions using the admin endpoint
+      const [allTransactions, allUsers] = await Promise.all([
+        apiClient.getAllTransactions(),
+        apiClient.getAllUsers(),
+      ]);
 
-      // Fetch transactions for all users
-      const allTransactions: Transaction[] = [];
-      for (const user of allUsers) {
-        try {
-          const userTransactions = await apiClient.getUserTransactionHistory(
-            user.id
-          );
-          allTransactions.push(...userTransactions);
-        } catch (error) {
-          console.error(
-            `Error fetching transactions for user ${user.id}:`,
-            error
-          );
-        }
-      }
-
-      setTransactions(allTransactions);
+      setTransactions(allTransactions || []);
+      setUsers(allUsers || []);
     } catch (error) {
       console.error("Error fetching transaction data:", error);
       toast.error("Failed to load transaction data. Please try again.");
+      // Initialize with empty arrays if fetch fails
+      setTransactions([]);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -127,30 +128,59 @@ export default function AdminTransactionsPage() {
     }
   };
 
+  // Safe calculation of totals with null checks
+  const totalTransactionValue = transactions.reduce(
+    (sum, transaction) => sum + (transaction?.amount || 0),
+    0
+  );
+
+  const transactionsByType = transactions.reduce((acc, transaction) => {
+    if (transaction && transaction.transactionType) {
+      const type = transaction.transactionType.toLowerCase();
+      acc[type] = (acc[type] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
   const filteredTransactions = transactions.filter((transaction) => {
+    if (!transaction) return false;
+
     const matchesSearch =
-      transaction.fromAccountNumber?.includes(searchTerm) ||
-      transaction.toAccountNumber?.includes(searchTerm) ||
-      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      (transaction.fromAccountNumber?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (transaction.toAccountNumber?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      ) ||
+      (transaction.description?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      );
+
     const matchesType =
       typeFilter === "all" ||
-      transaction.transactionType.toLowerCase() === typeFilter.toLowerCase();
+      (transaction.transactionType?.toLowerCase() || "") ===
+        typeFilter.toLowerCase();
+
     const matchesStatus =
       statusFilter === "all" ||
       (transaction.status?.toLowerCase() || "completed") ===
         statusFilter.toLowerCase();
+
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const totalTransactionValue = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0
-  );
-  const transactionsByType = transactions.reduce((acc, transaction) => {
-    const type = transaction.transactionType.toLowerCase();
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const handleViewDetails = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setIsViewModalOpen(true);
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  const formatAmount = (amount: number) => {
+    return `RWF ${amount.toLocaleString()}`;
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
@@ -270,7 +300,9 @@ export default function AdminTransactionsPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-700/50">
-                        {getTransactionIcon(transaction.transactionType)}
+                        {getTransactionIcon(
+                          transaction.transactionType || "unknown"
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -299,10 +331,10 @@ export default function AdminTransactionsPage() {
                       <div className="text-right">
                         <div
                           className={`font-semibold text-lg ${getAmountColor(
-                            transaction.transactionType
+                            transaction.transactionType || "unknown"
                           )}`}
                         >
-                          RWF {transaction.amount.toLocaleString()}
+                          RWF {transaction.amount?.toLocaleString() || "N/A"}
                         </div>
                         <div className="text-sm text-blue-200">
                           {new Date(transaction.timestamp).toLocaleDateString()}
@@ -319,7 +351,9 @@ export default function AdminTransactionsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="bg-blue-900 text-white">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetails(transaction)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
@@ -333,6 +367,77 @@ export default function AdminTransactionsPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* View Transaction Details Modal */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="bg-blue-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Transaction Details</DialogTitle>
+            <DialogDescription className="text-blue-200">
+              Detailed information about the transaction
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTransaction && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm text-blue-200">Transaction ID</h4>
+                  <p>{selectedTransaction.id}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Type</h4>
+                  <div className="flex items-center gap-2">
+                    {getTransactionIcon(
+                      selectedTransaction.transactionType || "unknown"
+                    )}
+                    <span className="capitalize">
+                      {selectedTransaction.transactionType}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Status</h4>
+                  <div>
+                    {getStatusBadge(selectedTransaction.status || "completed")}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Amount</h4>
+                  <p
+                    className={getAmountColor(
+                      selectedTransaction.transactionType || "unknown"
+                    )}
+                  >
+                    {formatAmount(selectedTransaction.amount)}
+                  </p>
+                </div>
+                {selectedTransaction.fromAccountNumber && (
+                  <div>
+                    <h4 className="text-sm text-blue-200">From Account</h4>
+                    <p>{selectedTransaction.fromAccountNumber}</p>
+                  </div>
+                )}
+                {selectedTransaction.toAccountNumber && (
+                  <div>
+                    <h4 className="text-sm text-blue-200">To Account</h4>
+                    <p>{selectedTransaction.toAccountNumber}</p>
+                  </div>
+                )}
+                <div className="col-span-2">
+                  <h4 className="text-sm text-blue-200">Timestamp</h4>
+                  <p>{formatTimestamp(selectedTransaction.timestamp)}</p>
+                </div>
+                {selectedTransaction.description && (
+                  <div className="col-span-2">
+                    <h4 className="text-sm text-blue-200">Description</h4>
+                    <p className="text-sm">{selectedTransaction.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

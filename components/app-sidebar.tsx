@@ -17,13 +17,13 @@ export function AppSidebar() {
     { icon: Home, label: "Home", href: "/dashboard/home" },
     { icon: CreditCard, label: "Accounts", href: "/dashboard/accounts" },
     { icon: Send, label: "Transfer", href: "/dashboard/transfer" },
-    { icon: History, label: "Transactions", href: "/dashboard/transactions" },
-    { icon: Settings, label: "Settings", href: "/dashboard/settings" },
-    { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
+    // { icon: History, label: "Transactions", href: "/dashboard/transactions" },
+    // { icon: Settings, label: "Settings", href: "/dashboard/settings" },
+    // { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
   ];
 
   return (
-    <div className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-white">
+    <div className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-[#0a3977] text-white">
       <div className="flex h-full flex-col">
         <nav className="space-y-1 p-4">
           {menuItems.map((item) => {

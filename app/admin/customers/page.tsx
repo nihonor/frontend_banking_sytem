@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Bell,
   ChevronDown,
@@ -78,6 +79,7 @@ interface CustomerData extends User {
   totalBalance: number;
   lastLogin?: string;
   recentActivity: AuditLog[];
+  status: string;
 }
 
 function formatDate(dateString: string | undefined): string {
@@ -143,36 +145,16 @@ function getRecentActivityBadge(activity: string) {
 }
 
 // Form validation schema
-const userFormSchema = z
-  .object({
-    username: z.string().min(3, "Username must be at least 3 characters"),
-    email: z.string().email("Invalid email address"),
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    role: z.enum(["user", "admin"]),
-    password: z
-      .string()
-      .min(6, "Password must be at least 6 characters")
-      .optional(),
-    confirmPassword: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      // Only validate passwords match if password is provided (for editing)
-      if (data.password) {
-        return data.password === data.confirmPassword;
-      }
-      return true;
-    },
-    {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    }
-  );
+const userFormSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  role: z.enum(["USER", "ADMIN"]),
+});
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [customers, setCustomers] = useState<CustomerData[]>([]);
@@ -189,11 +171,7 @@ export default function CustomersPage() {
     defaultValues: {
       username: "",
       email: "",
-      firstName: "",
-      lastName: "",
-      role: "user",
-      password: "",
-      confirmPassword: "",
+      role: "USER",
     },
   });
 
@@ -202,11 +180,7 @@ export default function CustomersPage() {
     defaultValues: {
       username: "",
       email: "",
-      firstName: "",
-      lastName: "",
-      role: "user",
-      password: "",
-      confirmPassword: "",
+      role: "USER",
     },
   });
 
@@ -279,11 +253,7 @@ export default function CustomersPage() {
     form.reset({
       username: customer.username,
       email: customer.email || "",
-      firstName: customer.firstName || "",
-      lastName: customer.lastName || "",
-      role: customer.role as "user" | "admin",
-      password: "",
-      confirmPassword: "",
+      role: customer.role as "USER" | "ADMIN",
     });
     setIsEditModalOpen(true);
   };
@@ -294,7 +264,9 @@ export default function CustomersPage() {
       // Update the local state to reflect the change
       setCustomers(
         customers.map((customer) =>
-          customer.id === userId ? { ...customer, role: "suspended" } : customer
+          customer.id === userId
+            ? { ...customer, status: "SUSPENDED" }
+            : customer
         )
       );
       toast.success("Account suspended successfully");
@@ -310,7 +282,7 @@ export default function CustomersPage() {
       // Update the local state to reflect the change
       setCustomers(
         customers.map((customer) =>
-          customer.id === userId ? { ...customer, role: "active" } : customer
+          customer.id === userId ? { ...customer, status: "ACTIVE" } : customer
         )
       );
       toast.success("Account activated successfully");
@@ -321,31 +293,84 @@ export default function CustomersPage() {
   };
 
   const handleUpdateCustomer = async (values: UserFormValues) => {
-    if (!selectedCustomer) return;
+    if (!selectedCustomer) {
+      console.error("No customer selected");
+      toast.error("No customer selected");
+      return;
+    }
 
     try {
-      const updatedCustomer = await apiClient.updateUser(
-        selectedCustomer.id,
-        values
+    
+
+      // Prepare the update data to match the backend expectations
+      const updateData = {
+        id: selectedCustomer.id,
+        username: values.username,
+        email: values.email,
+        role: values.role,
+        status: selectedCustomer.status, // Preserve the current status
+      };
+
+     
+
+      try {
+        const response = await apiClient.updateUser(
+          selectedCustomer.id,
+          updateData
+        );
+        
+
+        // Handle both array and single object responses
+        const updatedCustomer = Array.isArray(response)
+          ? response[0]
+          : response;
+
+        if (updatedCustomer) {
+         
+
+          setCustomers(
+            customers.map((customer) =>
+              customer.id === selectedCustomer.id
+                ? {
+                    ...customer,
+                    ...updatedCustomer,
+                    accounts: customer.accounts,
+                    totalBalance: customer.totalBalance,
+                    recentActivity: customer.recentActivity,
+                    lastLogin: customer.lastLogin,
+                  }
+                : customer
+            )
+          );
+
+          setIsEditModalOpen(false);
+          toast.success("Customer updated successfully");
+          fetchCustomerData();
+        } else {
+          console.error("No valid customer data in response");
+          toast.error("Failed to update customer data");
+        }
+      } catch (apiError: any) {
+        console.error("API Error:", apiError);
+        toast.error(apiError.message || "Failed to update customer");
+        throw apiError;
+      }
+    } catch (error: any) {
+      console.error("Error in handleUpdateCustomer:", error);
+      toast.error(
+        error.message || "Failed to update customer. Please try again."
       );
-      setCustomers(
-        customers.map((customer) =>
-          customer.id === selectedCustomer.id
-            ? { ...customer, ...updatedCustomer }
-            : customer
-        )
-      );
-      setIsEditModalOpen(false);
-      toast.success("Customer updated successfully");
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      toast.error("Failed to update customer. Please try again.");
     }
   };
 
   const handleAddCustomer = async (values: UserFormValues) => {
     try {
-      const { confirmPassword, ...userData } = values;
+      const userData = {
+        username: values.username,
+        email: values.email,
+        role: values.role,
+      };
+
       const newCustomer = await apiClient.createCustomer(userData);
       setCustomers([
         ...customers,
@@ -366,16 +391,12 @@ export default function CustomersPage() {
     }
   };
 
-  const getStatusBadge = (status: string = "active") => {
-    switch (status.toLowerCase()) {
-      case "active":
+  const getStatusBadge = (status: string = "ACTIVE") => {
+    switch (status.toUpperCase()) {
+      case "ACTIVE":
         return <Badge className="bg-green-500/20 text-green-400">Active</Badge>;
-      case "suspended":
+      case "SUSPENDED":
         return <Badge className="bg-red-500/20 text-red-400">Suspended</Badge>;
-      case "pending":
-        return (
-          <Badge className="bg-yellow-500/20 text-yellow-400">Pending</Badge>
-        );
       default:
         return <Badge className="bg-gray-500/20 text-gray-400">Unknown</Badge>;
     }
@@ -398,12 +419,11 @@ export default function CustomersPage() {
     const matchesSearch =
       customer.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.lastName?.toLowerCase().includes(searchTerm.toLowerCase());
+      customer.role.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === "all" ||
-      customer.role.toLowerCase() === statusFilter.toLowerCase();
+      customer.status.toUpperCase() === statusFilter.toUpperCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -459,8 +479,8 @@ export default function CustomersPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-blue-900 text-white cursor-pointer">
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="user">Regular Users</SelectItem>
-                  <SelectItem value="admin">Administrators</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -497,7 +517,7 @@ export default function CustomersPage() {
                             {customer.firstName || customer.username}{" "}
                             {customer.lastName || ""}
                           </h3>
-                          {getStatusBadge(customer.role)}
+                          {getStatusBadge(customer.status)}
                           {customer.recentActivity[0] &&
                             getRecentActivityBadge(
                               customer.recentActivity[0].action
@@ -551,7 +571,7 @@ export default function CustomersPage() {
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Customer
                           </DropdownMenuItem>
-                          {customer.role === "suspended" ? (
+                          {customer.status === "SUSPENDED" ? (
                             <DropdownMenuItem
                               className="text-green-400"
                               onClick={() => handleActivateAccount(customer.id)}
@@ -622,9 +642,7 @@ export default function CustomersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-sm text-blue-200">Name</h4>
-                  <p>
-                    {selectedCustomer.firstName} {selectedCustomer.lastName}
-                  </p>
+                  <p>{selectedCustomer.username}</p>
                 </div>
                 <div>
                   <h4 className="text-sm text-blue-200">Email</h4>
@@ -632,7 +650,7 @@ export default function CustomersPage() {
                 </div>
                 <div>
                   <h4 className="text-sm text-blue-200">Status</h4>
-                  <div>{getStatusBadge(selectedCustomer.role)}</div>
+                  <div>{getStatusBadge(selectedCustomer.status)}</div>
                 </div>
                 <div>
                   <h4 className="text-sm text-blue-200">Total Balance</h4>
@@ -673,47 +691,12 @@ export default function CustomersPage() {
           </DialogHeader>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(handleUpdateCustomer)}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await form.handleSubmit(handleUpdateCustomer)(e);
+              }}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        First Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        Last Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={form.control}
                 name="username"
@@ -764,8 +747,8 @@ export default function CustomersPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-blue-900 text-white">
-                        <SelectItem value="user">Regular User</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
+                        <SelectItem value="USER">Regular User</SelectItem>
+                        <SelectItem value="ADMIN">Administrator</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-red-400" />
@@ -807,44 +790,6 @@ export default function CustomersPage() {
               onSubmit={addCustomerForm.handleSubmit(handleAddCustomer)}
               className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addCustomerForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        First Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addCustomerForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        Last Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={addCustomerForm.control}
                 name="username"
@@ -882,46 +827,6 @@ export default function CustomersPage() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={addCustomerForm.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={addCustomerForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-blue-200">
-                        Confirm Password
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="password"
-                          className="border-blue-700 bg-blue-900/50 text-white"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-red-400" />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={addCustomerForm.control}
                 name="role"
@@ -935,8 +840,8 @@ export default function CustomersPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-blue-900 text-white">
-                        <SelectItem value="user">Regular User</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
+                        <SelectItem value="USER">Regular User</SelectItem>
+                        <SelectItem value="ADMIN">Administrator</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-red-400" />

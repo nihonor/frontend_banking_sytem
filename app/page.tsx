@@ -211,12 +211,12 @@ export default function LoginPage() {
             </Button>
             <div className="text-center text-sm text-blue-200">
               Don&apos;t have an account?{" "}
-              <Link
+              {/* <Link
                 href="/register"
                 className="font-medium text-white underline-offset-4 hover:underline"
               >
                 Sign up
-              </Link>
+              </Link> */}
             </div>
           </CardFooter>
         </form>

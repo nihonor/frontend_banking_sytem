@@ -12,8 +12,39 @@ import {
   Edit,
   Ban,
   Plus,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +71,27 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { apiClient, type Account, type User } from "@/lib/api";
 
+// Form validation schema
+const accountFormSchema = z.object({
+  accountType: z.enum(["SAVINGS", "CURRENT", "BUSINESS", "FIXED"]),
+  status: z.enum(["ACTIVE", "SUSPENDED", "CLOSED"]),
+});
+
+type AccountFormValues = z.infer<typeof accountFormSchema>;
+
+// Add new form schema for creating account
+const createAccountSchema = z.object({
+  userId: z.number({
+    required_error: "Please select a user",
+  }),
+  accountType: z.enum(["SAVINGS", "CURRENT", "BUSINESS", "FIXED"], {
+    required_error: "Please select an account type",
+  }),
+  initialBalance: z.number().min(0, "Initial balance must be 0 or greater"),
+});
+
+type CreateAccountFormValues = z.infer<typeof createAccountSchema>;
+
 export default function AdminAccountsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -47,6 +99,28 @@ export default function AdminAccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isSuspendDialogOpen, setIsSuspendDialogOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const form = useForm<AccountFormValues>({
+    resolver: zodResolver(accountFormSchema),
+    defaultValues: {
+      accountType: "SAVINGS",
+      status: "ACTIVE",
+    },
+  });
+
+  const createAccountForm = useForm<CreateAccountFormValues>({
+    resolver: zodResolver(createAccountSchema),
+    defaultValues: {
+      accountType: "SAVINGS",
+      initialBalance: 0,
+    },
+  });
 
   useEffect(() => {
     fetchAccountData();
@@ -71,12 +145,18 @@ export default function AdminAccountsPage() {
 
   const handleDeleteAccount = async (accountId: number) => {
     try {
+      setIsLoading(true);
       await apiClient.deleteAccount(accountId);
       setAccounts(accounts.filter((account) => account.id !== accountId));
-      toast.success("Account has been successfully deleted.");
-    } catch (error) {
+      setIsDeleteDialogOpen(false);
+      toast.success("Account has been successfully deleted");
+    } catch (error: any) {
       console.error("Error deleting account:", error);
-      toast.error("Failed to delete account. Please try again.");
+      toast.error(
+        error.message || "Failed to delete account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -144,6 +224,126 @@ export default function AdminAccountsPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  const handleViewDetails = (account: Account) => {
+    setSelectedAccount(account);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditAccount = (account: Account) => {
+    setSelectedAccount(account);
+    form.reset({
+      accountType: account.accountType.toUpperCase() as
+        | "SAVINGS"
+        | "CURRENT"
+        | "BUSINESS"
+        | "FIXED",
+      status:
+        (account.status?.toUpperCase() as "ACTIVE" | "SUSPENDED" | "CLOSED") ||
+        "ACTIVE",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateAccount = async (values: AccountFormValues) => {
+    if (!selectedAccount) {
+      toast.error("No account selected");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const updatedAccount = await apiClient.updateAccount(selectedAccount.id, {
+        ...selectedAccount,
+        accountType: values.accountType,
+        status: values.status,
+      });
+
+      setAccounts(
+        accounts.map((account) =>
+          account.id === selectedAccount.id ? updatedAccount : account
+        )
+      );
+
+      setIsEditModalOpen(false);
+      toast.success("Account updated successfully");
+    } catch (error: any) {
+      console.error("Error updating account:", error);
+      toast.error(
+        error.message || "Failed to update account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSuspendAccount = async (accountId: number) => {
+    try {
+      setIsLoading(true);
+      const updatedAccount = await apiClient.suspendAccount(accountId);
+
+      setAccounts(
+        accounts.map((account) =>
+          account.id === accountId ? updatedAccount : account
+        )
+      );
+
+      setIsSuspendDialogOpen(false);
+      toast.success("Account has been suspended");
+    } catch (error: any) {
+      console.error("Error suspending account:", error);
+      toast.error(
+        error.message || "Failed to suspend account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleActivateAccount = async (accountId: number) => {
+    try {
+      setIsLoading(true);
+      const updatedAccount = await apiClient.activateAccount(accountId);
+
+      setAccounts(
+        accounts.map((account) =>
+          account.id === accountId ? updatedAccount : account
+        )
+      );
+
+      toast.success("Account has been activated");
+    } catch (error: any) {
+      console.error("Error activating account:", error);
+      toast.error(
+        error.message || "Failed to activate account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateAccount = async (values: CreateAccountFormValues) => {
+    try {
+      setIsLoading(true);
+      const newAccount = await apiClient.createAccountForUser(
+        values.userId,
+        values.accountType,
+        values.initialBalance
+      );
+
+      setAccounts([...accounts, newAccount]);
+      setIsCreateModalOpen(false);
+      createAccountForm.reset();
+      toast.success("Account created successfully");
+    } catch (error: any) {
+      console.error("Error creating account:", error);
+      toast.error(
+        error.message || "Failed to create account. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
       <main className="flex-1 p-6">
@@ -205,7 +405,10 @@ export default function AdminAccountsPage() {
                   <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
-                <Button className="bg-yellow-500 text-blue-900 hover:bg-yellow-400">
+                <Button
+                  className="bg-yellow-500 text-blue-900 hover:bg-yellow-400"
+                  onClick={() => setIsCreateModalOpen(true)}
+                >
                   <Plus className="mr-2 h-4 w-4" />
                   Create Account
                 </Button>
@@ -308,25 +511,113 @@ export default function AdminAccountsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="bg-blue-900 text-white">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetails(account)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleEditAccount(account)}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Account
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Ban className="mr-2 h-4 w-4" />
-                            Suspend Account
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-400"
-                            onClick={() => handleDeleteAccount(account.id)}
+                          {account.status === "SUSPENDED" ? (
+                            <DropdownMenuItem
+                              className="text-green-400"
+                              onClick={() => handleActivateAccount(account.id)}
+                            >
+                              <Check className="mr-2 h-4 w-4" />
+                              Activate Account
+                            </DropdownMenuItem>
+                          ) : (
+                            <AlertDialog
+                              open={isSuspendDialogOpen}
+                              onOpenChange={setIsSuspendDialogOpen}
+                            >
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  onSelect={(e) => e.preventDefault()}
+                                >
+                                  <Ban className="mr-2 h-4 w-4" />
+                                  Suspend Account
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="bg-blue-900 text-white">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Suspend Account
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-blue-200">
+                                    Are you sure you want to suspend this
+                                    account? All transactions will be frozen.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel
+                                    className="bg-blue-800 text-white hover:bg-blue-700"
+                                    disabled={isLoading}
+                                  >
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-red-600 hover:bg-red-500"
+                                    onClick={() =>
+                                      handleSuspendAccount(account.id)
+                                    }
+                                    disabled={isLoading}
+                                  >
+                                    {isLoading
+                                      ? "Suspending..."
+                                      : "Suspend Account"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                          <AlertDialog
+                            open={isDeleteDialogOpen}
+                            onOpenChange={setIsDeleteDialogOpen}
                           >
-                            <Ban className="mr-2 h-4 w-4" />
-                            Delete Account
-                          </DropdownMenuItem>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                className="text-red-400"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                Delete Account
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-blue-900 text-white">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete Account
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-blue-200">
+                                  Are you sure you want to delete this account?
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel
+                                  className="bg-blue-800 text-white hover:bg-blue-700"
+                                  disabled={isLoading}
+                                >
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-red-600 hover:bg-red-500"
+                                  onClick={() =>
+                                    handleDeleteAccount(account.id)
+                                  }
+                                  disabled={isLoading}
+                                >
+                                  {isLoading ? "Deleting..." : "Delete Account"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -337,6 +628,256 @@ export default function AdminAccountsPage() {
           </CardContent>
         </Card>
       </main>
+
+      {/* View Details Modal */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="bg-blue-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Account Details</DialogTitle>
+            <DialogDescription className="text-blue-200">
+              Detailed information about the account
+            </DialogDescription>
+          </DialogHeader>
+          {selectedAccount && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm text-blue-200">Account Number</h4>
+                  <p>{selectedAccount.accountNumber}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Account Type</h4>
+                  <div>{getAccountTypeBadge(selectedAccount.accountType)}</div>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Status</h4>
+                  <div>
+                    {getStatusBadge(selectedAccount.status || "ACTIVE")}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Balance</h4>
+                  <p>RWF {selectedAccount.balance.toLocaleString()}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Owner</h4>
+                  <p>{getUserById(selectedAccount.userId)?.username}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm text-blue-200">Created At</h4>
+                  <p>
+                    {new Date(
+                      selectedAccount.createdAt || ""
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Account Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="bg-blue-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit Account</DialogTitle>
+            <DialogDescription className="text-blue-200">
+              Make changes to account settings
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleUpdateAccount)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-blue-200">
+                      Account Type
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="border-blue-700 bg-blue-900/50 text-white">
+                        <SelectValue placeholder="Select account type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-blue-900 text-white">
+                        <SelectItem value="SAVINGS">Savings</SelectItem>
+                        <SelectItem value="CURRENT">Current</SelectItem>
+                        <SelectItem value="BUSINESS">Business</SelectItem>
+                        <SelectItem value="FIXED">Fixed Deposit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-blue-200">
+                      Status
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="border-blue-700 bg-blue-900/50 text-white">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-blue-900 text-white">
+                        <SelectItem value="ACTIVE">Active</SelectItem>
+                        <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                        <SelectItem value="CLOSED">Closed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="border-blue-400 text-black hover:bg-blue-800"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-yellow-500 text-blue-900 hover:bg-yellow-400"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Account Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="bg-blue-900 text-white">
+          <DialogHeader>
+            <DialogTitle>Create New Account</DialogTitle>
+            <DialogDescription className="text-blue-200">
+              Create a new account for a user
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...createAccountForm}>
+            <form
+              onSubmit={createAccountForm.handleSubmit(handleCreateAccount)}
+              className="space-y-4"
+            >
+              <FormField
+                control={createAccountForm.control}
+                name="userId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-blue-200">
+                      Select User
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={field.value?.toString()}
+                    >
+                      <SelectTrigger className="border-blue-700 bg-blue-900/50 text-white">
+                        <SelectValue placeholder="Select a user" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-blue-900 text-white">
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.username} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createAccountForm.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-blue-200">
+                      Account Type
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="border-blue-700 bg-blue-900/50 text-white">
+                        <SelectValue placeholder="Select account type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-blue-900 text-white">
+                        <SelectItem value="SAVINGS">Savings</SelectItem>
+                        <SelectItem value="CURRENT">Current</SelectItem>
+                        <SelectItem value="BUSINESS">Business</SelectItem>
+                        <SelectItem value="FIXED">Fixed Deposit</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createAccountForm.control}
+                name="initialBalance"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm text-blue-200">
+                      Initial Balance
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseFloat(e.target.value))
+                        }
+                        className="border-blue-700 bg-blue-900/50 text-white"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="border-blue-400 text-black hover:bg-blue-800"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-yellow-500 text-blue-900 hover:bg-yellow-400"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Creating..." : "Create Account"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
