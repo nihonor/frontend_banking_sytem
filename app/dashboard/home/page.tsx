@@ -317,20 +317,20 @@ const page = () => {
       action: "Transfer",
       href: "/dashboard/transfer",
     },
-    // {
-    //   id: "statement",
-    //   name: "Download Statement",
-    //   icon: FileText,
-    //   action: "Download",
-    //   href: "#",
-    // }
-    // {
-    //   id: "new-account",
-    //   name: "Open New Account",
-    //   icon: Plus,
-    //   action: "Create",
-    //   onClick: () => setShowCreateAccount(true),
-    // },
+    {
+      id: "statement",
+      name: "Download Statement",
+      icon: FileText,
+      action: "Download",
+      href: "#",
+    },
+    {
+      id: "new-account",
+      name: "Open New Account",
+      icon: Plus,
+      action: "Create",
+      onClick: () => setShowCreateAccount(true),
+    },
   ];
 
   const fetchTransactions = async (userId: number | undefined) => {
