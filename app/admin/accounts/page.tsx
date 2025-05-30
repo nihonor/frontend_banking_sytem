@@ -73,7 +73,7 @@ import { apiClient, type Account, type User } from "@/lib/api";
 
 // Form validation schema
 const accountFormSchema = z.object({
-  accountType: z.enum(["SAVINGS", "CURRENT", "BUSINESS", "FIXED"]),
+  accountType: z.enum(["SAVINGS", "CHECKING"]),
   status: z.enum(["ACTIVE", "SUSPENDED", "CLOSED"]),
 });
 
@@ -84,7 +84,7 @@ const createAccountSchema = z.object({
   userId: z.number({
     required_error: "Please select a user",
   }),
-  accountType: z.enum(["SAVINGS", "CURRENT", "BUSINESS", "FIXED"], {
+  accountType: z.enum(["SAVINGS", "CHECKING"], {
     required_error: "Please select an account type",
   }),
   initialBalance: z.number().min(0, "Initial balance must be 0 or greater"),
@@ -822,10 +822,8 @@ export default function AdminAccountsPage() {
                         <SelectValue placeholder="Select account type" />
                       </SelectTrigger>
                       <SelectContent className="bg-blue-900 text-white">
-                        <SelectItem value="SAVINGS">Savings</SelectItem>
-                        <SelectItem value="CURRENT">Current</SelectItem>
-                        <SelectItem value="BUSINESS">Business</SelectItem>
-                        <SelectItem value="FIXED">Fixed Deposit</SelectItem>
+                        <SelectItem value="SAVINGS">SAVINGS</SelectItem>
+                        <SelectItem value="CHECKING">CHECKINGS</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage className="text-red-400" />

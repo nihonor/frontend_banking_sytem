@@ -143,7 +143,7 @@ export default function AdminLayout({
             </DropdownMenu>
           </div>
         </header>
-        <main className="flex-1 p-6 bg-[#0a3977] text-white">{children}</main>
+        <main className="flex-1 p-6 bg-[#0a3977] text-white ">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );

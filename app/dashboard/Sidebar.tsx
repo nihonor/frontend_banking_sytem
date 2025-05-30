@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   BarChart3,
   CreditCard,
@@ -28,6 +29,8 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
+  const pathname = usePathname();
+
   return (
     <Sidebar>
       <SidebarHeader className="flex h-16 items-center border-b border-blue-800 px-4 bg-[#0a3977]">
@@ -41,15 +44,21 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/dashboard">
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/home"}
+                >
+                  <Link href="/dashboard/home">
                     <Home className="h-5 w-5" />
                     <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/accounts"}
+                >
                   <Link href="/dashboard/accounts">
                     <Wallet className="h-5 w-5" />
                     <span>Accounts</span>
@@ -57,7 +66,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/transfer"}
+                >
                   <Link href="/dashboard/transfer">
                     <Send className="h-5 w-5" />
                     <span>Transfer</span>
@@ -65,7 +77,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/cards"}
+                >
                   <Link href="/dashboard/cards">
                     <CreditCard className="h-5 w-5" />
                     <span>Cards</span>
@@ -73,7 +88,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/savings"}
+                >
                   <Link href="/dashboard/savings">
                     <PiggyBank className="h-5 w-5" />
                     <span>Savings</span>
@@ -81,7 +99,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/investments"}
+                >
                   <Link href="/dashboard/investments">
                     <BarChart3 className="h-5 w-5" />
                     <span>Investments</span>
@@ -89,7 +110,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/statements"}
+                >
                   <Link href="/dashboard/statements">
                     <Newspaper className="h-5 w-5" />
                     <span>Statements</span>
@@ -97,7 +121,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/profile"}
+                >
                   <Link href="/dashboard/profile">
                     <User className="h-5 w-5" />
                     <span>Profile</span>
@@ -105,7 +132,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/security"}
+                >
                   <Link href="/dashboard/security">
                     <ShieldCheck className="h-5 w-5" />
                     <span>Security</span>
@@ -113,7 +143,10 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/settings"}
+                >
                   <Link href="/dashboard/settings">
                     <Settings className="h-5 w-5" />
                     <span>Settings</span>

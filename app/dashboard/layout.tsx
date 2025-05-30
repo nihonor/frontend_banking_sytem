@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { apiClient, type User } from "@/lib/api";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import Link from "next/link";
 
 export default function DashboardLayout({
@@ -78,10 +78,11 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a3977]">
-      <SidebarProvider>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between border-b border-blue-800 bg-[#0a3977] px-6">
+        <header className="flex h-16 items-center justify-between border-b border-blue-800 px-6 bg-[#0a3977] text-white">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-white">BANK OF KIGALI</h1>
           </div>
@@ -137,15 +138,10 @@ export default function DashboardLayout({
         </header>
 
         {/* Sidebar */}
-        <AppSidebar />
 
         {/* Main Content */}
-        <main className=" pt-16 bg-[#0a3977] text-white">
-          <div className="container mx-auto bg-[#0a3977] text-white p-6">
-            {children}
-          </div>
-        </main>
-      </SidebarProvider>
-    </div>
+        <main className="flex-1 p-6 bg-[#0a3977] text-white">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
