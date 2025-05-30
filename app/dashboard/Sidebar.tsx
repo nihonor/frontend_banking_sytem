@@ -134,6 +134,17 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname === "/dashboard/pay"}
+                >
+                  <Link href="/dashboard/profile">
+                    <CreditCard className="h-5 w-5" />
+                    <span>Pay</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
                   isActive={pathname === "/dashboard/security"}
                 >
                   <Link href="/dashboard/security">

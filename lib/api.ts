@@ -61,6 +61,30 @@ export interface CreateAccountRequest {
   initialBalance?: number;
 }
 
+export interface UserSettings {
+  theme: 'dark' | 'light' | 'system';
+  colorScheme: 'blue' | 'green' | 'purple';
+  animations: boolean;
+  language: string;
+  currency: string;
+  timezone: string;
+  dateFormat: string;
+  notifications: {
+    push: boolean;
+    email: boolean;
+    sms: boolean;
+    types: {
+      transactions: boolean;
+      security: boolean;
+      promotions: boolean;
+      news: boolean;
+    };
+  };
+  accessibility: {
+    textSize: 'small' | 'medium' | 'large';
+  };
+}
+
 // API Client class
 export class ApiClient {
   private baseURL: string
@@ -381,6 +405,18 @@ export class ApiClient {
       throw new Error("No user ID found");
     }
     return this.request<User>(`/users/${userId}`);
+  }
+
+  // Add these methods inside the ApiClient class
+  async getUserSettings(userId: number): Promise<UserSettings> {
+    return this.request<UserSettings>(`/users/${userId}/settings`);
+  }
+
+  async updateUserSettings(userId: number, settings: Partial<UserSettings>): Promise<UserSettings> {
+    return this.request<UserSettings>(`/users/${userId}/settings`, {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    });
   }
 }
 

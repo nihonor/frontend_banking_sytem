@@ -86,6 +86,7 @@ export default function AccountsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [transaction, setTransaction] = useState<Transaction[]>([]);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [newAccount, setNewAccount] = useState({
     accountType: "",
     initialDeposit: "",
@@ -95,6 +96,7 @@ export default function AccountsPage() {
   const [isStatementOpen, setIsStatementOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -341,94 +343,38 @@ export default function AccountsPage() {
     }
   };
 
+  const handleViewAllClick = () => {
+    setShowAllTransactions(true);
+  };
+
+  const handleViewLessClick = () => {
+    setShowAllTransactions(false);
+  };
+
+  const displayedTransactions = showAllTransactions
+    ? filteredTransactions
+    : filteredTransactions.slice(0, 5);
+
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      // Refresh all data
+      await Promise.all([
+        fetchAccounts(),
+        fetchTransactions(userId),
+        fetchNotifications(),
+      ]);
+      toast.success("Data refreshed successfully");
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast.error("Failed to refresh data");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#0a3977] text-white">
-      {/* <header className="flex h-16 items-center justify-between border-b border-blue-800 px-6">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">BANK OF KIGALI</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-white relative"
-                    >
-                      <Bell className="h-5 w-5" />
-                      {unreadCount > 0 && (
-                        <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-yellow-400 text-xs text-black">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-80 bg-blue-900 text-white border-blue-700">
-                    <div className="flex items-center justify-between px-4 py-2 border-b border-blue-800">
-                      <span className="font-semibold">Notifications</span>
-                      {unreadCount > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-blue-300 hover:text-white"
-                          onClick={markAllAsRead}
-                        >
-                          Mark all as read
-                        </Button>
-                      )}
-                    </div>
-                    <div className="max-h-[300px] overflow-y-auto">
-                      {notifications.length > 0 ? (
-                        notifications.map((notification) => (
-                          <DropdownMenuItem
-                            key={notification.id}
-                            className={`px-4 py-3 cursor-default ${
-                              !notification.isRead ? "bg-blue-800/50" : ""
-                            }`}
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                  {notification.message}
-                                </span>
-                                {!notification.isRead && (
-                                  <div className="h-2 w-2 rounded-full bg-yellow-400"></div>
-                                )}
-                              </div>
-                              <span className="text-xs text-blue-300">
-                                {new Date(
-                                  notification.timestamp
-                                ).toLocaleString()}
-                              </span>
-                            </div>
-                          </DropdownMenuItem>
-                        ))
-                      ) : (
-                        <div className="px-4 py-3 text-sm text-blue-300">
-                          No notifications
-                        </div>
-                      )}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-blue-900">
-                  {user?.username.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-sm font-medium">{user?.username}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="ml-1 h-5 w-5 text-white"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
-            </div> */}
-      {/* </header> */}
       <main className="flex-1 p-6">
         <div className="mb-6">
           <h2 className="text-2xl font-semibold">My Accounts</h2>
@@ -448,10 +394,14 @@ export default function AccountsPage() {
           <div className="flex gap-3">
             <Button
               variant="outline"
-              className="border-blue-400 text-white hover:bg-blue-800"
+              className="border-blue-400 text-black hover:bg-blue-800 cursor-pointer"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
             >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </Button>
             <Dialog>
               <DialogTrigger asChild>
@@ -887,21 +837,23 @@ export default function AccountsPage() {
             <div>
               <CardTitle className="text-lg">Transaction History</CardTitle>
               <CardDescription className="text-blue-200">
-                Last 30 days
+                {showAllTransactions
+                  ? "All Transactions"
+                  : "Last 5 Transactions"}
               </CardDescription>
             </div>
             <Button
               variant="outline"
-              className="border-blue-400 text-black hover:bg-blue-800 cursor-pointer"
+              className="border-blue-400 text-black hover:bg-blue-800 cursor-pointer "
               onClick={exportToExcel}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4 " />
               Export
             </Button>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredTransactions.map((transaction) => (
+              {displayedTransactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between rounded-lg bg-blue-900/50 p-3"
@@ -949,10 +901,27 @@ export default function AccountsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-center border-t border-blue-700 pt-4">
-            <Button variant="ghost" className="text-blue-200 hover:text-white">
-              <History className="mr-2 h-4 w-4" />
-              View All Transactions
-            </Button>
+            {!showAllTransactions && filteredTransactions.length > 5 ? (
+              <Button
+                variant="ghost"
+                className="text-blue-200 hover:text-black cursor-pointer"
+                onClick={handleViewAllClick}
+              >
+                <History className="mr-2 h-4 w-4" />
+                View All Transactions
+              </Button>
+            ) : (
+              showAllTransactions && (
+                <Button
+                  variant="ghost"
+                  className="text-blue-200 hover:text-black cursor-pointer"
+                  onClick={handleViewLessClick}
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  View Less
+                </Button>
+              )
+            )}
           </CardFooter>
         </Card>
       </main>
