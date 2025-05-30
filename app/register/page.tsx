@@ -102,8 +102,15 @@ export default function RegisterPage() {
         },
         body: JSON.stringify({
           username: formData.username,
-          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
+          phoneNumber: formData.phone,
+          idType: formData.idType,
+          nationalId: formData.idNumber,
+          password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          agreeTerms: formData.agreeTerms,
         }),
         credentials: "include",
       });
@@ -111,6 +118,7 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
+        console.log(data);
         router.push("/?registered=true");
       } else {
         setError(data.message || "Registration failed. Please try again.");

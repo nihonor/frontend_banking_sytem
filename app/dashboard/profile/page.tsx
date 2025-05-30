@@ -10,6 +10,7 @@ import {
   Phone,
   Save,
 } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -39,6 +40,7 @@ export default function ProfilePage() {
     nationality: "Rwandan",
     occupation: "Software Engineer",
     idNumber: "1199012345678901",
+    avatarUrl: "/profile-image.jpg",
   };
 
   return (
@@ -52,11 +54,15 @@ export default function ProfilePage() {
         <div>
           <Card className="bg-blue-800/50 text-white">
             <CardContent className="flex flex-col items-center justify-center p-6">
-              <Avatar className="mb-4 h-32 w-32 border-4 border-blue-700">
-                <AvatarFallback className="bg-blue-900 text-3xl">
-                  MA
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative mb-4 h-32 w-32 overflow-hidden rounded-full border-4 border-blue-700">
+                <Image
+                  src={userProfile.avatarUrl}
+                  alt={userProfile.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
               <h3 className="mb-1 text-xl font-semibold">{userProfile.name}</h3>
               <p className="mb-4 text-blue-200">Customer since 2020</p>
               <Button className="mb-2 w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400">
