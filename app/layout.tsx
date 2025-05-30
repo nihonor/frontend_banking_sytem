@@ -1,7 +1,11 @@
-import { Theme } from "@radix-ui/themes";
+import {
+  ThemeProvider,
+  LanguageProvider,
+  StyleProvider,
+} from "@/app/providers";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import type { Metadata } from "next";
-import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "ATM System",
@@ -16,10 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Theme>
-          {children}
-          <Toaster />
-        </Theme>
+        <ThemeProvider>
+          <LanguageProvider>
+            <StyleProvider>
+              {children}
+              <Toaster />
+            </StyleProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -118,7 +118,7 @@ export default function DashboardLayout({
               >
                 <DropdownMenuItem className="cursor-pointer">
                   <UserIcon className="mr-2 h-4 w-4" />
-                  <Link href="/dashboard/profie">Profile</Link>
+                  <Link href="/dashboard/profile">Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />

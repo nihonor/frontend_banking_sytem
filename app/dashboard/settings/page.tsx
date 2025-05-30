@@ -23,6 +23,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  useTheme,
+  useLanguage,
+  useStyle,
+  languageNames,
+} from "@/app/providers";
 
 interface UserSettings {
   theme: "dark" | "light" | "system";
@@ -53,13 +59,23 @@ const defaultSettings: UserSettings = {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<UserSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(false);
+  const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
+  const { language, setLanguage } = useLanguage();
+  const { textSize, setTextSize, animations, setAnimations } = useStyle();
 
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem("userSettings");
     if (savedSettings) {
       try {
-        setSettings(JSON.parse(savedSettings));
+        const parsed = JSON.parse(savedSettings);
+        setSettings(parsed);
+        // Apply saved settings to providers
+        setTheme(parsed.theme);
+        setColorScheme(parsed.colorScheme);
+        setLanguage(parsed.language);
+        setTextSize(parsed.accessibility.textSize);
+        setAnimations(parsed.animations);
       } catch (error) {
         console.error("Error parsing saved settings:", error);
         setSettings(defaultSettings);
@@ -71,6 +87,22 @@ export default function SettingsPage() {
   useEffect(() => {
     localStorage.setItem("userSettings", JSON.stringify(settings));
   }, [settings]);
+
+  // Add new useEffect to handle provider updates
+  useEffect(() => {
+    setTheme(settings.theme);
+    setColorScheme(settings.colorScheme);
+    setLanguage(settings.language);
+    setAnimations(settings.animations);
+    setTextSize(settings.accessibility.textSize);
+  }, [
+    settings,
+    setTheme,
+    setColorScheme,
+    setLanguage,
+    setAnimations,
+    setTextSize,
+  ]);
 
   const updateSettings = (newSettings: Partial<UserSettings>) => {
     setIsLoading(true);
@@ -92,6 +124,12 @@ export default function SettingsPage() {
     setIsLoading(true);
     try {
       setSettings(defaultSettings);
+      // Reset all providers
+      setTheme(defaultSettings.theme);
+      setColorScheme(defaultSettings.colorScheme);
+      setLanguage(defaultSettings.language);
+      setTextSize(defaultSettings.accessibility.textSize);
+      setAnimations(defaultSettings.animations);
       toast.success("Settings reset to defaults");
     } catch (error) {
       console.error("Error resetting settings:", error);
