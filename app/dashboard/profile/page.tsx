@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   ChevronDown,
@@ -11,6 +11,7 @@ import {
   Save,
 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,24 +28,128 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { apiClient } from "@/lib/api";
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-
-  const userProfile = {
-    name: "Mutoni Alice",
-    email: "mutoni.alice@example.com",
-    phone: "+250 78 123 4567",
-    address: "KG 123 St, Kigali, Rwanda",
-    dateOfBirth: "15/04/1990",
-    nationality: "Rwandan",
-    occupation: "Software Engineer",
-    idNumber: "1199012345678901",
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const [userProfile, setUserProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    dateOfBirth: "",
+    nationality: "",
+    occupation: "",
+    idNumber: "",
     avatarUrl: "/profile-image.jpg",
+  });
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      router.push("/");
+      return;
+    }
+
+    fetchUserProfile(parseInt(userId));
+  }, [router]);
+
+  const fetchUserProfile = async (userId: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `http://localhost:8080/api/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user profile");
+      }
+
+      const data = await response.json();
+      setUserProfile({
+        name: `${data.firstName} ${data.lastName}`,
+        email: data.email,
+        phone: data.phoneNumber || "",
+        address: data.address || "",
+        dateOfBirth: data.dateOfBirth || "",
+        nationality: data.nationality || "",
+        occupation: data.occupation || "",
+        idNumber: data.nationalId || "",
+        avatarUrl: data.avatarUrl || "/profile-image.jpg",
+      });
+    } catch (err) {
+      console.error("Error fetching user profile:", err);
+      setError("Failed to load profile data");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSaveChanges = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      const response = await fetch(
+        `http://localhost:8080/api/users/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            firstName: userProfile.name.split(" ")[0],
+            lastName: userProfile.name.split(" ")[1] || "",
+            email: userProfile.email,
+            phoneNumber: userProfile.phone,
+            address: userProfile.address,
+            dateOfBirth: userProfile.dateOfBirth,
+            nationality: userProfile.nationality,
+            occupation: userProfile.occupation,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      setIsEditing(false);
+      // Refresh the profile data
+      fetchUserProfile(parseInt(userId));
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError("Failed to update profile");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-blue-200">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <main className="flex-1 p-6">
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
+          {error}
+        </div>
+      )}
       <div className="mb-6">
         <h2 className="text-2xl font-semibold">My Profile</h2>
         <p className="text-blue-200">Manage your personal information</p>
@@ -131,7 +236,13 @@ export default function ProfilePage() {
                   <Button
                     variant="outline"
                     className="border-blue-400 text-white hover:bg-blue-800"
-                    onClick={() => setIsEditing(!isEditing)}
+                    onClick={() => {
+                      if (isEditing) {
+                        handleSaveChanges();
+                      } else {
+                        setIsEditing(true);
+                      }
+                    }}
                   >
                     {isEditing ? (
                       <>
@@ -152,7 +263,13 @@ export default function ProfilePage() {
                       <Label htmlFor="fullName">Full Name</Label>
                       <Input
                         id="fullName"
-                        defaultValue={userProfile.name}
+                        value={userProfile.name}
+                        onChange={(e) =>
+                          setUserProfile({
+                            ...userProfile,
+                            name: e.target.value,
+                          })
+                        }
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -161,7 +278,13 @@ export default function ProfilePage() {
                       <Label htmlFor="email">Email Address</Label>
                       <Input
                         id="email"
-                        defaultValue={userProfile.email}
+                        value={userProfile.email}
+                        onChange={(e) =>
+                          setUserProfile({
+                            ...userProfile,
+                            email: e.target.value,
+                          })
+                        }
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -173,7 +296,13 @@ export default function ProfilePage() {
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input
                         id="phone"
-                        defaultValue={userProfile.phone}
+                        value={userProfile.phone}
+                        onChange={(e) =>
+                          setUserProfile({
+                            ...userProfile,
+                            phone: e.target.value,
+                          })
+                        }
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -182,7 +311,7 @@ export default function ProfilePage() {
                       <Label htmlFor="dob">Date of Birth</Label>
                       <Input
                         id="dob"
-                        defaultValue={userProfile.dateOfBirth}
+                        value={userProfile.dateOfBirth}
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -193,7 +322,7 @@ export default function ProfilePage() {
                     <Label htmlFor="address">Address</Label>
                     <Input
                       id="address"
-                      defaultValue={userProfile.address}
+                      value={userProfile.address}
                       readOnly={!isEditing}
                       className="border-blue-700 bg-blue-900/50 text-white"
                     />
@@ -204,7 +333,7 @@ export default function ProfilePage() {
                       <Label htmlFor="nationality">Nationality</Label>
                       <Input
                         id="nationality"
-                        defaultValue={userProfile.nationality}
+                        value={userProfile.nationality}
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -213,7 +342,7 @@ export default function ProfilePage() {
                       <Label htmlFor="occupation">Occupation</Label>
                       <Input
                         id="occupation"
-                        defaultValue={userProfile.occupation}
+                        value={userProfile.occupation}
                         readOnly={!isEditing}
                         className="border-blue-700 bg-blue-900/50 text-white"
                       />
@@ -224,7 +353,7 @@ export default function ProfilePage() {
                     <Label htmlFor="idNumber">ID Number</Label>
                     <Input
                       id="idNumber"
-                      defaultValue={userProfile.idNumber}
+                      value={userProfile.idNumber}
                       readOnly={true}
                       className="border-blue-700 bg-blue-900/50 text-white"
                     />
