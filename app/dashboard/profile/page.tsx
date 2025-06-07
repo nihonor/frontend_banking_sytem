@@ -160,13 +160,15 @@ export default function ProfilePage() {
           <Card className="bg-blue-800/50 text-white">
             <CardContent className="flex flex-col items-center justify-center p-6">
               <div className="relative mb-4 h-32 w-32 overflow-hidden rounded-full border-4 border-blue-700">
-                <Image
-                  src={userProfile.avatarUrl}
-                  alt={userProfile.name}
-                  fill
-                  className="object-cover"
-                  priority
-                />
+                <Avatar className="h-full w-full">
+                  <AvatarImage
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.name}
+                  />
+                  <AvatarFallback className="text-4xl">
+                    {userProfile.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               </div>
               <h3 className="mb-1 text-xl font-semibold">{userProfile.name}</h3>
               <p className="mb-4 text-blue-200">Customer since 2020</p>
