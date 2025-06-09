@@ -9,6 +9,7 @@ import {
   HelpCircle,
   LogOut,
 } from "lucide-react";
+import { apiClient } from "@/lib/api";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -21,6 +22,17 @@ export function AppSidebar() {
     // { icon: Settings, label: "Settings", href: "/dashboard/settings" },
     // { icon: HelpCircle, label: "Help", href: "/dashboard/help" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await apiClient.logout();
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Still redirect to login page even if logout fails
+      window.location.href = "/";
+    }
+  };
 
   return (
     <div className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r border-gray-200 bg-[#0a3977] text-white">
@@ -46,10 +58,7 @@ export function AppSidebar() {
         </nav>
         <div className="mt-auto p-4">
           <button
-            onClick={() => {
-              localStorage.removeItem("token");
-              window.location.href = "/";
-            }}
+            onClick={handleLogout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500 transition-colors hover:bg-red-50"
           >
             <LogOut className="h-4 w-4" />

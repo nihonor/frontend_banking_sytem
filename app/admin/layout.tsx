@@ -55,14 +55,11 @@ export default function AdminLayout({
   const handleLogout = async () => {
     try {
       await apiClient.logout();
-      // Clear all auth-related localStorage items
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userRole");
       router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
+      // Still redirect to login page even if logout fails
+      router.push("/");
     }
   };
 

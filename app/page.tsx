@@ -70,10 +70,17 @@ export default function LoginPage() {
       }
 
       if (response.ok && data.token) {
+        // Store auth data
         localStorage.setItem("token", data.token);
         localStorage.setItem("userRole", data.role);
-        localStorage.setItem("userId", data.id);
+        localStorage.setItem("userId", data.id.toString());
+        localStorage.setItem("username", data.username);
 
+        // Set token in cookie as well for SSR
+        document.cookie = `token=${data.token}; path=/; secure; samesite=strict`;
+        document.cookie = `userRole=${data.role}; path=/; secure; samesite=strict`;
+
+        // Redirect based on role
         if (data.role === "ADMIN") {
           router.push("/admin/home");
         } else {
