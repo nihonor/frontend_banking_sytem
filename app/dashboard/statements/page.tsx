@@ -44,7 +44,7 @@ export default function StatementPage() {
 
   const fetchTransactions = async () => {
     try {
-      const data = await apiClient.getTransactions(timeRange);
+      const data = await apiClient.getAllTransactions(timeRange);
       setTransactions(data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -175,7 +175,7 @@ export default function StatementPage() {
               </TableHead>
               <TableHead
                 className="cursor-pointer"
-                onClick={() => handleSort("type")}
+                onClick={() => handleSort("transactionType")}
               >
                 Type
                 {sortConfig.key === "type" && (
@@ -229,19 +229,19 @@ export default function StatementPage() {
                   <TableCell>
                     <span
                       className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                        transaction.type === "CREDIT"
+                        transaction.transactionType === "CREDIT"
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
                       }`}
                     >
-                      {transaction.type}
+                      {transaction.transactionType}
                     </span>
                   </TableCell>
-                  <TableCell>{transaction.reference || "-"}</TableCell>
+                  {/* <TableCell>{transaction.referenc || "-"}</TableCell> */}
                   <TableCell>{transaction.description || "-"}</TableCell>
                   <TableCell
                     className={`text-right ${
-                      transaction.type === "CREDIT"
+                      transaction.transactionType === "CREDIT"
                         ? "text-green-600"
                         : "text-red-600"
                     }`}
@@ -249,7 +249,7 @@ export default function StatementPage() {
                     {formatAmount(transaction.amount)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatAmount(transaction.balance)}
+                    {/* {formatAmount(transaction.balance)} */}
                   </TableCell>
                   <TableCell>
                     <span

@@ -19,12 +19,12 @@ export interface Account {
 
 export interface Transaction {
   id: number;
-  type: string;
+  type: 'CREDIT' | 'DEBIT';
   amount: number;
   description?: string;
   reference?: string;
   timestamp: string;
-  status: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
   balance: number;
   accountId: number;
 }
@@ -149,9 +149,10 @@ export const apiClient = {
     if (!response.ok) throw new Error('Failed to delete account');
   },
 
-  async getTransactions(timeRange: string = '7d'): Promise<Transaction[]> {
+  async getAllTransactions(timeRange?: string): Promise<Transaction[]> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${BASE_URL}/transactions?timeRange=${timeRange}`, {
+    const userId = localStorage.getItem('userId');
+    const response = await fetch(`${BASE_URL}/users/${userId}/transactions${timeRange ? `?timeRange=${timeRange}` : ''}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
@@ -162,9 +163,10 @@ export const apiClient = {
     return response.json();
   },
 
-  async downloadStatement(timeRange: string = '7d'): Promise<Blob> {
+  async downloadStatement(timeRange?: string): Promise<Blob> {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${BASE_URL}/transactions/download?timeRange=${timeRange}`, {
+    const userId = localStorage.getItem('userId');
+    const response = await fetch(`${BASE_URL}/users/${userId}/transactions/download${timeRange ? `?timeRange=${timeRange}` : ''}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
