@@ -274,7 +274,8 @@ export default function RegisterPage() {
             <CardFooter className="flex flex-col gap-4">
               <Button
                 type="submit"
-                className="w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400"
+                className="w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400 py-2"
+                disabled={loading || !mounted}
               >
                 Continue
               </Button>
