@@ -258,7 +258,7 @@ export default function RegisterPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 pb-3">
                 <Label htmlFor="idNumber">ID Number</Label>
                 <Input
                   id="idNumber"
@@ -274,7 +274,7 @@ export default function RegisterPage() {
             <CardFooter className="flex flex-col gap-4">
               <Button
                 type="submit"
-                className="w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400 py-2"
+                className="w-full bg-yellow-500 text-blue-900 hover:bg-yellow-400 py-2 "
                 disabled={loading || !mounted}
               >
                 Continue

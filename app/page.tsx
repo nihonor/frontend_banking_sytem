@@ -203,7 +203,7 @@ export default function LoginPage() {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked as boolean)}
               />
-              <Label htmlFor="remember" className="text-sm font-normal">
+              <Label htmlFor="remember" className="text-sm font-normal py-3">
                 Remember me for 30 days
               </Label>
             </div>
